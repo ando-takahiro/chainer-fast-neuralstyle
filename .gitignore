@@ -86,3 +86,10 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+
+*.model
+*.state
+*.swp
+starry_night.jpg
+*.caffemodel

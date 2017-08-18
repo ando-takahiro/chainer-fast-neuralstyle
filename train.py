@@ -30,8 +30,8 @@ def gram_matrix(y):
 def total_variation(x):
     xp = cuda.get_array_module(x.data)
     b, ch, h, w = x.data.shape
-    wh = Variable(xp.asarray([[[[1], [-1]], [[0], [0]], [[0], [0]]], [[[0], [0]], [[1], [-1]], [[0], [0]]], [[[0], [0]], [[0], [0]], [[1], [-1]]]], dtype=np.float32), volatile=x.volatile)
-    ww = Variable(xp.asarray([[[[1, -1]], [[0, 0]], [[0, 0]]], [[[0, 0]], [[1, -1]], [[0, 0]]], [[[0, 0]], [[0, 0]], [[1, -1]]]], dtype=np.float32), volatile=x.volatile)
+    wh = Variable(xp.asarray([[[[1], [-1]], [[0], [0]], [[0], [0]]], [[[0], [0]], [[1], [-1]], [[0], [0]]], [[[0], [0]], [[0], [0]], [[1], [-1]]]], dtype=np.float32))#, volatile=x.volatile)
+    ww = Variable(xp.asarray([[[[1, -1]], [[0, 0]], [[0, 0]]], [[[0, 0]], [[1, -1]], [[0, 0]]], [[[0, 0]], [[0, 0]], [[1, -1]]]], dtype=np.float32))#, volatile=x.volatile)
     return F.sum(F.convolution_2d(x, W=wh) ** 2) + F.sum(F.convolution_2d(x, W=ww) ** 2)
 
 parser = argparse.ArgumentParser(description='Real-time style transfer')
@@ -98,12 +98,13 @@ if args.resume:
     print('load optimizer state from', args.resume)
     serializers.load_npz(args.resume, O)
 
+chainer.config.enable_backprop = False
 style = vgg.preprocess(np.asarray(Image.open(args.style_image).convert('RGB').resize((image_size,image_size)), dtype=np.float32))
 style = xp.asarray(style, dtype=xp.float32)
 style_b = xp.zeros((batchsize,) + style.shape, dtype=xp.float32)
 for i in range(batchsize):
     style_b[i] = style
-feature_s = vgg(Variable(style_b, volatile=True))
+feature_s = vgg(Variable(style_b))#, volatile=True))
 gram_s = [gram_matrix(y) for y in feature_s]
 
 for epoch in range(n_epoch):
@@ -117,7 +118,7 @@ for epoch in range(n_epoch):
         for j in range(batchsize):
             x[j] = load_image(imagepaths[i*batchsize + j], image_size)
 
-        xc = Variable(x.copy(), volatile=True)
+        xc = Variable(x.copy())#, volatile=True)
         x = Variable(x)
 
         y = model(x)
